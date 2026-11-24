@@ -259,51 +259,223 @@ select
 	distinct referred_by_customer_id
 from customers;
 
+
+-- query writing!
+-- basic queries!
+-- *, coln, as, from, where, multiple filtering, like, log, compar, dates, ...
+-- group having, order lmit offset!
+
+
+-- depthful!
+-- Joins!
+-- Subqueries!
+-- window functions!
+
+-- besides, 
+-- conceptual thinking, which db to choose, why, dbms concepts!
+-- optimizations!
+-- Transactions -> SQL -> ACID, Nomralizations!
+
+
+
+
+-- Joins
+
+-- 28. get all customers who made the orders!
+select
+	count(*)
+from customers
+join orders
+on customers.customer_id = orders.customer_id;
+
+-- inner join -> 
+-- it returns the common entries!
+-- from above, context, we can say!
+-- all the customers, who had made the orders! (not geeting the customers who not made any order!)
+
+
+-- customer -> c_id -> p.k
+
+
+-- 29. get all the orders, and their order items!
 select
 	*
-    from customers
-    join orders
-    on customers.customer_id = orders.customer_id;
+from orders
+join order_items
+on orders.order_id = order_items.order_id;
 
+-- 30. get the customers, order details, and items data together!
+-- get all the customers details, who made the order!
+-- (inner join)
+-- then from those orders, get their items details as well! like quatities, !
+select
+	*
+from customers 
+join orders
+on customers.customer_id = orders.customer_id
+join order_items 
+on orders.order_id = order_items.order_id;
 
-select * from orders;
-
+-- denormalization!
 
 
 select 
-	*
-from customers
-join orders
-on customers.cus
+	count(*)
+from orders
+join customers
+on customers.customer_id = orders.customer_id;
 
-
+-- 31.
 select
-	*
+	count(*)
 from customers as c
 left join orders as o
-on c.customers_id = o.customers_id;
--- all those customer who has made the order! but , also we are getting those customer who didn't made any oders!(exclsuive content of left table)
--- we sent the customers who don't  makes any oder! (left exclucive case!)
+on c.customer_id = o.customer_id;
+-- all those customer who has made the orders!
+-- but, also we are gettig those customer who didn't made any order! (exclsuive content of left table)
 
--- 33. get all customer name, ids, and payment mode of those who made some orders, using UPI's.
+
+-- 32. 
+-- we wnat the customers who don't makes any orders! (left table exclusive cases!)
 select
-	*
-    c.customer_name,
 	c.customer_id,
+    c.customer_name,
+    c.email,
+    c.city,
+    o.total_amount,
+    o.customer_id,
+    o.payment_mode
+from customers as c
+left join  orders as o
+on c.customer_id = o.customer_id
+where o.customer_id is null;
+
+
+-- 33. get the customer names, ids, email and payment mode of those who made some orders, using UPI's.
+-- inner join! -> common
+-- left join! -> extract
+select
+	c.customer_name,
+    c.customer_id,
     c.email,
     o.payment_mode
-from coustomer as c
+from customers as c
 join orders as o
-on c.customer =
-where o.payment_mode = "UPI"
--- 34. for those customers, who not made any other, get their email ids!
-* select
-	c.email
+on c.customer_id = o.customer_id
+where o.payment_mode = "UPI";
+
+
+-- 34. for those customers, who not made any order, get their email ids!
+-- left join! -> common + exlcuive content of left table!
+select
+	-- count(c.email)
+    c.email
 from customers as c
 left join orders as o
-on c.customer_id = 0.customer_id
-where 0.customer_id is null;
+on c.customer_id = o.customer_id
+where o.customer_id is null;
 
--- 35.
+-- 35. find the gender wise, total orders, total revenue, and avg discount we gave 
+-- from flipkart
+
+-- Genders | total order | total amount | avg discount 
 
 select
+	c.gender as Gender,
+    count(o.order_id) as total_orders,
+    sum(o.total_amount) as revenue,
+    round( avg(o.discount_amount), 2)  as avg_discount
+from customers as c
+join orders as o
+on c.customer_id = o.customer_id
+group by c.gender;
+
+-- we can calc. the percentage wise, contributin of total orders later!
+
+
+
+
+-- assuming, common entries!
+
+select
+	*
+from customers as c
+join orders as o
+on c.customer_id = o.customer_id
+join order_items as oi
+on o.order_id = oi.order_id
+join returns as r
+on oi.order_item_id = r.order_item_id;
+
+-- 36. calcuate the city-tier wise total return cases!
+select
+	tier,
+    count(r.return_id) as total_return_cases
+from customers as c
+join orders as o
+on c.customer_id = o.customer_id
+join order_items as oi
+on o.order_id = oi.order_id
+join returns as r
+on oi.order_item_id = r.order_item_id
+group by tier;
+
+-- for this, col, single time!
+
+-- 38. calc. the total amount of revenue from orders, which belongs to "Himalaya" brand
+-- and have items above 4 !
+
+select
+	sum( quantity * unit_price) as amt
+from order_items as oi
+join products as p
+on oi.product_id = p.product_id
+where brand = "Himalaya" and quantity > 3;
+
+-- cross join!
+
+
+select * from products;
+
+
+
+-- 39. find which product has maximum returns!
+
+select
+	p.product_id,
+    p.product_name,
+    count(r.return_id) as total_returns
+   --  max(p.product_name),
+--     count(r.return_id)
+from products as p
+join order_items as oi
+on p.product_id = oi.product_id
+join returns as r
+on oi.order_item_id = r.order_item_id
+group by p.product_id
+order by total_returns desc;
+
+
+-- 40. find the top 50 customer details, who made the highest amt of single time 
+-- purchase!
+
+
+-- cross join!
+-- number of rows ==  m * n!
+-- m -> records in table 1
+-- n -> records in table 2
+-- redudancy is at peak, too much compelxit and duplicay precent here!
+select
+	count(*)
+from customers as c
+cross join orders as o;
+
+-- self join!
+-- when we want to merge the table by itself!
+select
+	*
+from customers as c1
+join customers as c2
+on c1.referred_by_customer_id = c2.customer_id;
+
+-- here we covered the 40 detailed analytical ques!
